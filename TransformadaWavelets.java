@@ -40,7 +40,7 @@ public class TransformadaWavelets {
                 altura--;
             }
 
-            aplicarLinhasHaar(coeffs, largura, altura);
+            aplicarHaarLinhas(coeffs, largura, altura);
             aplicarColunasHaar(coeffs, largura, altura);
 
             int meioL = largura / 2;
@@ -55,16 +55,16 @@ public class TransformadaWavelets {
              */
 
             // LL
-            adicionarEntropiaEnergia(caracteristicas, coeffs, 0, 0, meioL, meioA);
+            adicionarEnergiaEntropia(caracteristicas, coeffs, 0, 0, meioL, meioA);
 
             // HL
-            adicionarEntropiaEnergia(caracteristicas, coeffs, meioL, 0, meioL, meioA);
+            adicionarEnergiaEntropia(caracteristicas, coeffs, meioL, 0, meioL, meioA);
 
             // LH
-            adicionarEntropiaEnergia(caracteristicas, coeffs, 0, meioA, meioL, meioA);
+            adicionarEnergiaEntropia(caracteristicas, coeffs, 0, meioA, meioL, meioA);
 
             // HH
-            adicionarEntropiaEnergia(caracteristicas, coeffs, meioL, meioA, meioL, meioA);
+            adicionarEnergiaEntropia(caracteristicas, coeffs, meioL, meioA, meioL, meioA);
 
             // No próximo nível, decompõe apenas a região LL
             largura = meioL;
@@ -93,9 +93,9 @@ public class TransformadaWavelets {
         // Cria uma nova imagem vazia com o mesmo tamanho da imagem original
         ImageAccess copia = new ImageAccess(largura, altura);
 
-        for (int i = 0; i < altura; i++) {
-            for (int j = 0; j < largura; j++) {
-                copia.putPixel(i, j, entrada.getPixel(i, j));
+        for (int y = 0; y < altura; y++) {
+            for (int x = 0; x < largura; x++) {
+                copia.putPixel(x, y, entrada.getPixel(x, y));
             }
         }
 
@@ -221,11 +221,13 @@ public class TransformadaWavelets {
         // Calcula a energia da sub-banda selecionada
         double energia = calcularEnergia(imagem, inicioX, inicioY, largura, altura);
 
+        double energiaMedia = energia / (largura * altura);
+
         // Calcula a entropia da sub-banda selecionada
         double entropia = calcularEntropia(imagem, inicioX, inicioY, largura, altura, energia);
 
         // Adiciona a energia ao vetor de características
-        caracteristicas.add(energia);
+        caracteristicas.add(energiaMedia);
 
         // Adiciona a entropia ao vetor de características
         caracteristicas.add(entropia);
@@ -312,7 +314,7 @@ public class TransformadaWavelets {
                 double valor = imagem.getPixel(i, j);
 
                 // Calcula a proporção de energia desse coeficiente
-                double p = (valor * valor) / energia;
+                double p = (valor * valor) / energia;              
 
                 // Evita calcular logaritmo de zero
                 if (p > 0.0) {
@@ -354,5 +356,31 @@ public class TransformadaWavelets {
 
         // Retorna a raiz quadrada da soma, que é a distância euclidiana
         return Math.sqrt(soma);
+    }
+
+    public static double distanciaManhattan(double[] a, double[] b) {
+        int tamanho = Math.min(a.length, b.length);
+        double soma = 0.0;
+
+        for (int i = 0; i < tamanho; i++) {
+            soma += Math.abs(a[i] - b[i]);
+        }
+
+        return soma;
+    }
+
+    public static double distanciaInfinity(double[] a, double[] b) {
+        int tamanho = Math.min(a.length, b.length);
+        double maior = 0.0;
+
+        for (int i = 0; i < tamanho; i++) {
+            double diferenca = Math.abs(a[i] - b[i]);
+
+            if (diferenca > maior) {
+                maior = diferenca;
+            }
+        }
+
+        return maior;
     }
 }
