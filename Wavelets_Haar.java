@@ -40,7 +40,17 @@ public class Wavelets_Haar implements PlugInFilter {
             return;
 
         k = (int) gd.getNextNumber();
+
+        if(k < 0){
+            IJ.error("K deve ser maior ou igual a 1.");
+        }
+
         nivel = (int) gd.getNextNumber();
+
+        if(nivel < 1){
+            IJ.error("Nivel deve ser maior ou igual a 1.");
+        }
+
         funcaoDistancia = gd.getNextChoice();
         // Seleciona o diretório que contém as imagens da base de dados que serão comparadas à imagem de referência.
         DirectoryChooser dc = new DirectoryChooser("Selecionar pasta da base de imagens");
@@ -73,6 +83,10 @@ public class Wavelets_Haar implements PlugInFilter {
             File f = new File(dir + lista[i]);
 
             if (!f.isDirectory()) {
+                if (lista[i].equals(referencia.getTitle())) {
+                    continue;
+                }
+
                 ImagePlus image = new Opener().openImage(dir, lista[i]); // abre imagem image 
 
                 if (image != null) {
@@ -92,6 +106,8 @@ public class Wavelets_Haar implements PlugInFilter {
                 }
             }
         }
+
+        salvarVetoresCaracteristicas(dir, vetorReferencia, resultados);
 
         Collections.sort(resultados);
 
@@ -135,7 +151,7 @@ public class Wavelets_Haar implements PlugInFilter {
 
             IJ.log("");
             IJ.log((i + 1) + " - " + r.nomeArquivo);
-            IJ.log("Distancia: " + r.distancia);
+            IJ.log("Distancia: " + IJ.d2s(r.distancia, 3));
             IJ.log("Vetor:");
             imprimirVetor(r.vetor);
         }
@@ -169,7 +185,7 @@ public class Wavelets_Haar implements PlugInFilter {
 
                 arquivo.println("");
                 arquivo.println((i + 1) + " - " + r.nomeArquivo);
-                arquivo.println("Distancia: " + r.distancia);
+                arquivo.println("Distancia: " + IJ.d2s(r.distancia, 3));
                 arquivo.println("Vetor:");
                 arquivo.println(vetorParaString(r.vetor));
             }
@@ -181,12 +197,43 @@ public class Wavelets_Haar implements PlugInFilter {
         }
     }
 
+    public void salvarVetoresCaracteristicas(String dir, double[] vetorReferencia, ArrayList<Resultado> resultados) {
+        try {
+            PrintWriter arquivo = new PrintWriter(
+                new FileWriter(dir + "vetores_caracteristicas.txt")
+            );
+
+            arquivo.println("PARAMETROS");
+            arquivo.println("Nivel Wavelet: " + nivel);
+            arquivo.println("");
+
+            arquivo.println("IMAGEM DE REFERENCIA");
+            arquivo.println("referencia; " + vetorParaString(vetorReferencia));
+            arquivo.println("");
+
+            arquivo.println("IMAGENS DA BASE");
+
+            for (Resultado r : resultados) {
+                arquivo.println(
+                    r.nomeArquivo + "; " + vetorParaString(r.vetor) + "\n"
+                );
+            }
+
+            arquivo.close();
+
+            IJ.log("Vetores salvos em: vetores_caracteristicas.txt");
+
+        } catch (IOException e) {
+            IJ.error("Erro ao salvar os vetores de características.");
+        }
+    }
+
     // Utilitários
     public String vetorParaString(double[] vetor) {
         StringBuffer linha = new StringBuffer();
 
         for (int i = 0; i < vetor.length; i++) {
-            linha.append(IJ.d2s(vetor[i], 4));
+            linha.append(IJ.d2s(vetor[i], 3));
 
             if (i < vetor.length - 1) {
                 linha.append(", ");
