@@ -328,14 +328,14 @@ public class TransformadaWavelets {
     }
 
     /**
-     * Calcula a distância euclidiana entre dois vetores de características.
+     * Calcula a distância Euclidiana entre dois vetores de características.
      *
-     * Essa distância pode ser usada no Wavelets_Haar para medir o quão parecidas
-     * duas imagens são a partir de seus vetores de energia e entropia.
+     * Definida como a raiz quadrada da soma dos quadrados das diferenças
+     * entre os elementos correspondentes dos dois vetores.
      *
      * @param a primeiro vetor de características
      * @param b segundo vetor de características
-     * @return distância euclidiana entre os dois vetores
+     * @return distância Euclidiana entre os dois vetores
      */
     public static double distanciaEuclidiana(double[] a, double[] b) {
         // Usa o menor tamanho entre os dois vetores para evitar erro de índice
@@ -358,29 +358,58 @@ public class TransformadaWavelets {
         return Math.sqrt(soma);
     }
 
+    /**
+     * Calcula a distância Manhattan entre dois vetores de características.
+     *
+     * Definida como a soma dos valores absolutos das diferenças entre
+     * os elementos correspondentes dos dois vetores.
+     *
+     * @param a primeiro vetor de características
+     * @param b segundo vetor de características
+     * @return distância de manhattan entre os dois vetores
+     */
     public static double distanciaManhattan(double[] a, double[] b) {
         int tamanho = Math.min(a.length, b.length);
+
         double soma = 0.0;
 
         for (int i = 0; i < tamanho; i++) {
+
+            // Soma o valor absoluto da diferença entre os elementos na mesma posição
             soma += Math.abs(a[i] - b[i]);
         }
 
+        // Retorna a soma total, que é a distância Manhattan
         return soma;
     }
 
+    /**
+     * Calcula a distância Infinity entre dois vetores de características.
+     *
+     * Definida como o maior valor absoluto entre as diferenças dos
+     * elementos correspondentes dos dois vetores.
+     *
+     * @param a primeiro vetor de características
+     * @param b segundo vetor de características
+     * @return distância Infinity entre os dois vetores
+     */
     public static double distanciaInfinity(double[] a, double[] b) {
         int tamanho = Math.min(a.length, b.length);
+        
         double maior = 0.0;
 
         for (int i = 0; i < tamanho; i++) {
+
+            // Calcula o valor absoluto da diferença entre os elementos na mesma posição
             double diferenca = Math.abs(a[i] - b[i]);
 
+            // Atualiza o maior valor se a diferença atual for maior
             if (diferenca > maior) {
                 maior = diferenca;
             }
         }
 
+        // Retorna o maior valor absoluto encontrado, que é a distância Infinity
         return maior;
     }
 }
