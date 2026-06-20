@@ -330,7 +330,7 @@ public class TransformadaWavelets {
     /**
      * Calcula a distância euclidiana entre dois vetores de características.
      *
-     * Essa distância pode ser usada no K-nearest para medir o quão parecidas
+     * Essa distância pode ser usada no Wavelets_Haar para medir o quão parecidas
      * duas imagens são a partir de seus vetores de energia e entropia.
      *
      * @param a primeiro vetor de características

@@ -11,13 +11,13 @@ import ij.plugin.filter.*;
 import ij.io.DirectoryChooser;
 
 public class Wavelets_Haar implements PlugInFilter {
-    ImagePlus reference;
-    int k;
-    int level;
-    String distanceFunction;
+    ImagePlus referencia; // Imagem de referência
+    int k; // Quantidade de vizinhos próximos
+    int nivel; // Nível de decomposição Wavelet
+    String funcaoDistancia; 
 
     public int setup(String arg, ImagePlus imp) {
-        reference = imp;
+        referencia = imp;
         ImageConverter ic = new ImageConverter(imp);
         ic.convertToGray8();
         return DOES_8G;
@@ -26,12 +26,12 @@ public class Wavelets_Haar implements PlugInFilter {
     public void run(ImageProcessor img) {
 
         GenericDialog gd = new GenericDialog("Wavelets Haar - KNN", IJ.getInstance());
-        gd.addNumericField("Number of nearest neighbors (K):", 1, 0);
-        gd.addNumericField("Wavelet decomposition level:", 1, 0);
+        gd.addNumericField("Quantidade de vizinhos mais proximos (K): ", 1, 0);
+        gd.addNumericField("Nivel de decomposicao Wavelet: ", 1, 0);
         gd.addChoice(
-            "Distance function:",
-            new String[]{"Euclidean", "Manhattan", "Infinity"},
-            "Euclidean"
+            "Funcao de distancia:",
+            new String[]{"Euclidiana", "Manhattan", "Infinity"},
+            "Euclidiana"
         );
 
         gd.showDialog();
@@ -40,46 +40,40 @@ public class Wavelets_Haar implements PlugInFilter {
             return;
 
         k = (int) gd.getNextNumber();
-        level = (int) gd.getNextNumber();
-        distanceFunction = gd.getNextChoice();
-
-        DirectoryChooser dc = new DirectoryChooser("Select image database folder");
+        nivel = (int) gd.getNextNumber();
+        funcaoDistancia = gd.getNextChoice();
+        // Seleciona o diretório que contém as imagens da base de dados que serão comparadas à imagem de referência.
+        DirectoryChooser dc = new DirectoryChooser("Selecionar pasta da base de imagens");
         String dir = dc.getDirectory();
 
         if (dir == null) return;
 
-        search(dir);
+        buscar(dir);
     }
 
-    public void search(String dir) {
+    public void buscar(String dir) {
         IJ.log("");
-        IJ.log("Searching images...");
-        IJ.log("Distance function: " + distanceFunction);
+        IJ.log("Procurando imagens...");
+        IJ.log("Funcao de distancia: " + funcaoDistancia);
 
         if (!dir.endsWith(File.separator))
             dir += File.separator;
-
-        String[] list = new File(dir).list();
-        if (list == null) return;
+        String[] lista = new File(dir).list(); // lista de arquivos
+        if (lista == null) return;
 
         ArrayList<Resultado> resultados = new ArrayList<Resultado>();
+        
+        ImageAccess refAccess = new ImageAccess(referencia.getProcessor());
+        double[] vetorReferencia = TransformadaWavelets.extrairCaracteristicas(refAccess, nivel);
 
-        ImageAccess refAccess = new ImageAccess(reference.getProcessor());
-        double[] vetorReferencia =
-            TransformadaWavelets.extrairCaracteristicas(refAccess, level);
+        for (int i = 0; i < lista.length; i++) {
+            IJ.showStatus(i + "/" + lista.length + ": " + lista[i]); // mostra na interface
+            IJ.showProgress((double) i / lista.length); // 
 
-        IJ.log("");
-        IJ.log("Reference image vector:");
-        imprimirVetor(vetorReferencia);
-
-        for (int i = 0; i < list.length; i++) {
-            IJ.showStatus(i + "/" + list.length + ": " + list[i]);
-            IJ.showProgress((double) i / list.length);
-
-            File f = new File(dir + list[i]);
+            File f = new File(dir + lista[i]);
 
             if (!f.isDirectory()) {
-                ImagePlus image = new Opener().openImage(dir, list[i]);
+                ImagePlus image = new Opener().openImage(dir, lista[i]); // abre imagem image 
 
                 if (image != null) {
                     ImageConverter ic = new ImageConverter(image);
@@ -87,23 +81,52 @@ public class Wavelets_Haar implements PlugInFilter {
 
                     ImageAccess input = new ImageAccess(image.getProcessor());
 
-                    double[] vetorBusca =
-                        TransformadaWavelets.extrairCaracteristicas(input, level);
+                    double[] vetorBusca = TransformadaWavelets.extrairCaracteristicas(input, nivel);
 
                     double distancia = calcularDistancia(
                         vetorReferencia,
                         vetorBusca
                     );
 
-                    resultados.add(new Resultado(list[i], distancia, vetorBusca));
+                    resultados.add(new Resultado(lista[i], distancia, vetorBusca));
                 }
             }
         }
 
         Collections.sort(resultados);
 
+        imprimirResultado(vetorReferencia, resultados);
+
+        salvarResultado(dir, vetorReferencia, resultados);
+
+        IJ.showProgress(1.0);
+        IJ.showStatus("");
+    }
+
+    // Método auxiliar de buscar()
+    public double calcularDistancia(double[] a, double[] b) {
+        if (funcaoDistancia.equals("Manhattan")) {
+            return TransformadaWavelets.distanciaManhattan(a, b);
+        }
+
+        if (funcaoDistancia.equals("Infinity")) {
+            return TransformadaWavelets.distanciaInfinity(a, b);
+        }
+
+        return TransformadaWavelets.distanciaEuclidiana(a, b);
+    }
+
+    // Saída
+    public void imprimirResultado(
+        double[] vetorReferencia,
+        ArrayList<Resultado> resultados
+    ) {
         IJ.log("");
-        IJ.log("K nearest images:");
+        IJ.log("Vetor para a imagem de referencia:");
+        imprimirVetor(vetorReferencia);
+
+        IJ.log("");
+        IJ.log("K imagens vizinhas mais proximas:");
 
         int limite = Math.min(k, resultados.size());
 
@@ -112,39 +135,69 @@ public class Wavelets_Haar implements PlugInFilter {
 
             IJ.log("");
             IJ.log((i + 1) + " - " + r.nomeArquivo);
-            IJ.log("Distance: " + r.distancia);
-            IJ.log("Vector:");
+            IJ.log("Distancia: " + r.distancia);
+            IJ.log("Vetor:");
             imprimirVetor(r.vetor);
         }
-
-        IJ.showProgress(1.0);
-        IJ.showStatus("");
     }
 
-    public double calcularDistancia(double[] a, double[] b) {
-        if (distanceFunction.equals("Manhattan")) {
-            return TransformadaWavelets.distanciaManhattan(a, b);
-        }
+    public void salvarResultado(
+        String dir,
+        double[] vetorReferencia,
+        ArrayList<Resultado> resultados
+    ) {
+        try {
+            PrintWriter arquivo =
+                new PrintWriter(new FileWriter(dir + "resultado_wavelets.txt"));
 
-        if (distanceFunction.equals("Infinity")) {
-            return TransformadaWavelets.distanciaInfinity(a, b);
-        }
+            arquivo.println("PARAMETROS");
+            arquivo.println("Funcao de distancia: " + funcaoDistancia);
+            arquivo.println("K: " + k);
+            arquivo.println("Nivel: " + nivel);
+            arquivo.println("");
 
-        return TransformadaWavelets.distanciaEuclidiana(a, b);
+            arquivo.println("IMAGEM DE REFERENCIA");
+            arquivo.println(vetorParaString(vetorReferencia));
+            arquivo.println("");
+
+            arquivo.println("RESULTADO K-NN");
+
+            int limite = Math.min(k, resultados.size());
+
+            for (int i = 0; i < limite; i++) {
+                Resultado r = resultados.get(i);
+
+                arquivo.println("");
+                arquivo.println((i + 1) + " - " + r.nomeArquivo);
+                arquivo.println("Distancia: " + r.distancia);
+                arquivo.println("Vetor:");
+                arquivo.println(vetorParaString(r.vetor));
+            }
+
+            arquivo.close();
+
+        } catch (IOException e) {
+            IJ.error("Erro ao salvar resultado");
+        }
     }
 
-    public void imprimirVetor(double[] vetor) {
-        String linha = "";
+    // Utilitários
+    public String vetorParaString(double[] vetor) {
+        StringBuffer linha = new StringBuffer();
 
         for (int i = 0; i < vetor.length; i++) {
-            linha += IJ.d2s(vetor[i], 4);
+            linha.append(IJ.d2s(vetor[i], 4));
 
             if (i < vetor.length - 1) {
-                linha += ", ";
+                linha.append(", ");
             }
         }
 
-        IJ.log(linha);
+        return linha.toString();
+    }
+
+    public void imprimirVetor(double[] vetor) {
+        IJ.log(vetorParaString(vetor));
     }
 }
 
