@@ -84,16 +84,17 @@ public class Wavelets_Haar implements PlugInFilter {
 
         if (k < 1){
             IJ.error("K deve ser maior ou igual a 1.");
+            return;
         }
-        return;
+        
 
         // Obtém o nível de decomposição informado pelo usuário
         nivel = (int) gd.getNextNumber();
 
         if (nivel < 1){
             IJ.error("Nivel deve ser maior ou igual a 1.");
+            return;
         }
-        return;
 
         // Obtém a função de distância selecionada
         funcaoDistancia = gd.getNextChoice();
