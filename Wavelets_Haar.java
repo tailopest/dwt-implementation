@@ -1,5 +1,3 @@
-// Plugin para Wavelets Haar adaptado do exemplo para k-nearest 
-
 import java.io.*;
 import java.util.*;
 import java.awt.Desktop;
@@ -17,10 +15,17 @@ import ij.io.DirectoryChooser;
  */
 
 public class Wavelets_Haar implements PlugInFilter {
-    ImagePlus referencia; // Imagem de referência
-    int k; // Quantidade de vizinhos próximos
-    int nivel; // Nível de decomposição Wavelet
-    String funcaoDistancia; // Função de distância escolhida
+    /** Imagem de referência */
+    ImagePlus referencia;
+
+    /** Quantidade de vizinhos mais próximos */
+    int k;
+
+    /** Número de níveis de decomposição da DWT Haar. */
+    int nivel;
+
+    /** Função de distância escolhida: "Euclidiana", "Manhattan" ou "Infinity". */
+    String funcaoDistancia;
 
     /**
      * Inicializa o plugin com a imagem aberta no ImageJ.
@@ -80,6 +85,7 @@ public class Wavelets_Haar implements PlugInFilter {
         if (k < 1){
             IJ.error("K deve ser maior ou igual a 1.");
         }
+        return;
 
         // Obtém o nível de decomposição informado pelo usuário
         nivel = (int) gd.getNextNumber();
@@ -87,6 +93,7 @@ public class Wavelets_Haar implements PlugInFilter {
         if (nivel < 1){
             IJ.error("Nivel deve ser maior ou igual a 1.");
         }
+        return;
 
         // Obtém a função de distância selecionada
         funcaoDistancia = gd.getNextChoice();
@@ -114,7 +121,6 @@ public class Wavelets_Haar implements PlugInFilter {
 
     public void buscar(String dir) {
 
-        // Busca iniciada
         IJ.log("Procurando imagens...");
         IJ.log("");
 
@@ -402,6 +408,12 @@ public class Wavelets_Haar implements PlugInFilter {
         return linha.toString();
     }
 
+    /**
+     * Exibe um vetor de características no log do ImageJ.
+     *
+     * @param vetor vetor de valores a ser exibido
+     */
+
     public void imprimirVetor(double[] vetor) {
         IJ.log(vetorParaString(vetor));
     }
@@ -410,8 +422,6 @@ public class Wavelets_Haar implements PlugInFilter {
 /**
  * Representa o resultado da comparação entre a imagem de referência
  * e uma imagem da base de dados.
- *
- * Implementa a interface Comparable para permitir ordenação por distância crescente.
  */
 
 class Resultado implements Comparable<Resultado> {
@@ -420,7 +430,7 @@ class Resultado implements Comparable<Resultado> {
     double[] vetor;
 
     /**
-     * Cria um novo resultado com os dados de uma imagem da base.
+     * Cria um novo resultado.
      *
      * @param nomeArquivo nome do arquivo da imagem
      * @param distancia distância em relação à imagem de referência
